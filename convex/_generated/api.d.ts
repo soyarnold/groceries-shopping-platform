@@ -8,9 +8,12 @@
  * @module
  */
 
+import type * as cart from "../cart.js";
 import type * as categories from "../categories.js";
+import type * as favorites from "../favorites.js";
 import type * as inventory from "../inventory.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_cart from "../lib/cart.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_membership from "../lib/membership.js";
 import type * as lib_org from "../lib/org.js";
@@ -26,9 +29,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cart: typeof cart;
   categories: typeof categories;
+  favorites: typeof favorites;
   inventory: typeof inventory;
   "lib/auth": typeof lib_auth;
+  "lib/cart": typeof lib_cart;
   "lib/catalog": typeof lib_catalog;
   "lib/membership": typeof lib_membership;
   "lib/org": typeof lib_org;
