@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "convex dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
@@ -11,6 +12,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.6.0",
+    "convex": "^1.42.3",
     "next": "16.2.11",
     "react": "19.2.4",
     "react-dom": "19.2.4"
