@@ -56,9 +56,9 @@ export default function CartPage() {
             <h2 className="font-serif text-2xl">{group.storeName}</h2>
             <Link
               href={`/checkout/${group.orgId}`}
-              className="text-sm underline"
+              className="border border-stone-900 bg-stone-900 px-3 py-1 text-sm text-white"
             >
-              Checkout this store (phase 4)
+              Checkout this store
             </Link>
           </div>
           <ul className="divide-y divide-stone-200 border border-stone-200 bg-white/80">

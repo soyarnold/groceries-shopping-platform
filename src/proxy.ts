@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   "/s(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Stripe posts here unsigned by Clerk; authenticity is the Stripe signature.
+  "/api/stripe/webhook(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
