@@ -8,10 +8,14 @@
  * @module
  */
 
+import type * as categories from "../categories.js";
+import type * as inventory from "../inventory.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_membership from "../lib/membership.js";
 import type * as lib_org from "../lib/org.js";
 import type * as lib_slug from "../lib/slug.js";
+import type * as products from "../products.js";
 import type * as stores from "../stores.js";
 import type * as users from "../users.js";
 
@@ -22,10 +26,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  categories: typeof categories;
+  inventory: typeof inventory;
   "lib/auth": typeof lib_auth;
+  "lib/catalog": typeof lib_catalog;
   "lib/membership": typeof lib_membership;
   "lib/org": typeof lib_org;
   "lib/slug": typeof lib_slug;
+  products: typeof products;
   stores: typeof stores;
   users: typeof users;
 }>;
