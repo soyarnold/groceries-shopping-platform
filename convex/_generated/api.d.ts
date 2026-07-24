@@ -19,10 +19,12 @@ import type * as lib_membership from "../lib/membership.js";
 import type * as lib_orders from "../lib/orders.js";
 import type * as lib_org from "../lib/org.js";
 import type * as lib_slug from "../lib/slug.js";
+import type * as membership from "../membership.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
 import type * as stores from "../stores.js";
 import type * as stripeCheckout from "../stripeCheckout.js";
+import type * as stripeMembership from "../stripeMembership.js";
 import type * as users from "../users.js";
 
 import type {
@@ -43,10 +45,12 @@ declare const fullApi: ApiFromModules<{
   "lib/orders": typeof lib_orders;
   "lib/org": typeof lib_org;
   "lib/slug": typeof lib_slug;
+  membership: typeof membership;
   orders: typeof orders;
   products: typeof products;
   stores: typeof stores;
   stripeCheckout: typeof stripeCheckout;
+  stripeMembership: typeof stripeMembership;
   users: typeof users;
 }>;
 

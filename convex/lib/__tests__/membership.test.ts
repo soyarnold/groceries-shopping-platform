@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isMembershipActive, resolvePriceCents } from "../membership";
+import {
+  isMembershipActive,
+  membershipLabel,
+  membershipStatusFromStripe,
+  resolvePriceCents,
+} from "../membership";
 
 describe("membership pricing", () => {
   it("treats only active as membership", () => {
@@ -36,5 +41,33 @@ describe("membership pricing", () => {
         membershipStatus: "none",
       }),
     ).toBe(500);
+  });
+});
+
+describe("Stripe subscription status mapping", () => {
+  it("maps active and trialing to active", () => {
+    expect(membershipStatusFromStripe("active")).toBe("active");
+    expect(membershipStatusFromStripe("trialing")).toBe("active");
+  });
+
+  it("maps past_due and unpaid", () => {
+    expect(membershipStatusFromStripe("past_due")).toBe("past_due");
+    expect(membershipStatusFromStripe("unpaid")).toBe("past_due");
+  });
+
+  it("maps canceled states", () => {
+    expect(membershipStatusFromStripe("canceled")).toBe("canceled");
+    expect(membershipStatusFromStripe("incomplete_expired")).toBe("canceled");
+  });
+
+  it("maps incomplete / paused / unknown to none", () => {
+    expect(membershipStatusFromStripe("incomplete")).toBe("none");
+    expect(membershipStatusFromStripe("paused")).toBe("none");
+    expect(membershipStatusFromStripe("weird")).toBe("none");
+  });
+
+  it("labels statuses for UI", () => {
+    expect(membershipLabel("active")).toBe("Plus active");
+    expect(membershipLabel("none")).toBe("Free account");
   });
 });

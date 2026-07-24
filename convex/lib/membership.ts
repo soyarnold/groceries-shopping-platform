@@ -18,3 +18,42 @@ export function resolvePriceCents(args: {
   }
   return args.priceCents;
 }
+
+/**
+ * Map Stripe Subscription.status → our platform membershipStatus.
+ * https://docs.stripe.com/api/subscriptions/object#subscription_object-status
+ */
+export function membershipStatusFromStripe(
+  stripeStatus: string,
+): MembershipStatus {
+  switch (stripeStatus) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "past_due":
+    case "unpaid":
+      return "past_due";
+    case "canceled":
+    case "incomplete_expired":
+      return "canceled";
+    case "incomplete":
+    case "paused":
+      return "none";
+    default:
+      return "none";
+  }
+}
+
+/** Human-readable label for the membership UI. */
+export function membershipLabel(status: MembershipStatus): string {
+  switch (status) {
+    case "active":
+      return "Plus active";
+    case "past_due":
+      return "Payment past due";
+    case "canceled":
+      return "Canceled";
+    case "none":
+      return "Free account";
+  }
+}
