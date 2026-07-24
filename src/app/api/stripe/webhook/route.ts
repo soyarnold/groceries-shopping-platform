@@ -14,21 +14,74 @@ function getStripe(): Stripe {
   return new Stripe(key);
 }
 
+function customerIdOf(
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null,
+): string | undefined {
+  if (!customer) {
+    return undefined;
+  }
+  return typeof customer === "string" ? customer : customer.id;
+}
+
+function membershipEndsAtMs(
+  subscription: Stripe.Subscription,
+): number | undefined {
+  // Stripe API moved period bounds onto subscription items.
+  const fromItem = subscription.items.data[0]?.current_period_end;
+  if (fromItem) {
+    return fromItem * 1000;
+  }
+  if (subscription.cancel_at) {
+    return subscription.cancel_at * 1000;
+  }
+  if (subscription.ended_at) {
+    return subscription.ended_at * 1000;
+  }
+  return undefined;
+}
+
+async function applySubscription(
+  client: ConvexHttpClient,
+  bridgeSecret: string,
+  event: Stripe.Event,
+  subscription: Stripe.Subscription,
+  clerkUserIdFallback?: string,
+) {
+  const stripeCustomerId = customerIdOf(subscription.customer);
+  if (!stripeCustomerId) {
+    return;
+  }
+
+  await client.mutation(api.membership.applyStripeSubscriptionEvent, {
+    webhookKey: bridgeSecret,
+    stripeEventId: event.id,
+    type: event.type,
+    stripeCustomerId,
+    stripeSubscriptionStatus: subscription.status,
+    membershipEndsAt: membershipEndsAtMs(subscription),
+    clerkUserId: subscription.metadata.clerkUserId ?? clerkUserIdFallback,
+  });
+}
+
 /**
  * Stripe → Next.js → Convex bridge.
  *
  * Stripe cannot call Convex mutations directly with verified signatures, so this
- * route verifies the Stripe webhook, then calls `orders.completeCheckoutSession`
- * with `STRIPE_WEBHOOK_BRIDGE_SECRET` (shared with the Convex deployment).
+ * route verifies the Stripe webhook, then calls Convex with
+ * `STRIPE_WEBHOOK_BRIDGE_SECRET` (shared with the Convex deployment).
  *
  * Local: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
  * and set `STRIPE_WEBHOOK_SECRET` to the printed `whsec_…` value.
+ *
+ * Events:
+ * - checkout.session.completed (mode=payment) → order paid
+ * - checkout.session.completed (mode=subscription) + subscription.* → membership
  */
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
   // From Stripe Dashboard / `stripe listen` — proves the request is from Stripe.
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  // Shared with Convex; authorizes our verified webhook to mark orders paid.
+  // Shared with Convex; authorizes our verified webhook to mutate Convex.
   const bridgeSecret = process.env.STRIPE_WEBHOOK_BRIDGE_SECRET;
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
@@ -52,12 +105,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // Phase 4: one-time Checkout payments. Subscription events land in phase 5.
+  const client = new ConvexHttpClient(convexUrl);
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    // Ignore subscription mode sessions (membership) — different fulfillment path.
+
     if (session.mode === "payment") {
-      const client = new ConvexHttpClient(convexUrl);
       const paymentIntentId =
         typeof session.payment_intent === "string"
           ? session.payment_intent
@@ -69,6 +122,32 @@ export async function POST(request: Request) {
         stripePaymentIntentId: paymentIntentId,
       });
     }
+
+    // Membership Checkout: sync from the created subscription (also covered by
+    // customer.subscription.* events; this catches the first success promptly).
+    if (session.mode === "subscription" && session.subscription) {
+      const subscriptionId =
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      await applySubscription(
+        client,
+        bridgeSecret,
+        event,
+        subscription,
+        session.metadata?.clerkUserId,
+      );
+    }
+  }
+
+  if (
+    event.type === "customer.subscription.created" ||
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.deleted"
+  ) {
+    const subscription = event.data.object as Stripe.Subscription;
+    await applySubscription(client, bridgeSecret, event, subscription);
   }
 
   // Always 200 after a valid signature so Stripe does not retry forever.
