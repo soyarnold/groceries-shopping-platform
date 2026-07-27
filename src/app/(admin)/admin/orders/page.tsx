@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
@@ -13,7 +13,11 @@ const NEXT_STATUS: Record<string, string | undefined> = {
 };
 
 export default function AdminOrdersPage() {
-  const orders = useQuery(api.orders.listForActiveStore);
+  const { isAuthenticated } = useConvexAuth();
+  const orders = useQuery(
+    api.orders.listForActiveStore,
+    isAuthenticated ? {} : "skip",
+  );
   const updateStatus = useMutation(api.orders.updateStatus);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,11 +1,15 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 
 export default function AdminCategoriesPage() {
-  const categories = useQuery(api.categories.listMine);
+  const { isAuthenticated } = useConvexAuth();
+  const categories = useQuery(
+    api.categories.listMine,
+    isAuthenticated ? {} : "skip",
+  );
   const createCategory = useMutation(api.categories.create);
   const updateCategory = useMutation(api.categories.update);
   const [name, setName] = useState("");

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { assertNonNegativeInt, isLowStock } from "./lib/catalog";
-import { requireActiveOrgId } from "./lib/org";
+import { getActiveOrgIdOrNull, requireActiveOrgId } from "./lib/org";
 
 const inventoryRowValidator = v.object({
   _id: v.id("inventory"),
@@ -19,7 +19,10 @@ export const listMine = query({
   args: {},
   returns: v.array(inventoryRowValidator),
   handler: async (ctx) => {
-    const orgId = await requireActiveOrgId(ctx);
+    const orgId = await getActiveOrgIdOrNull(ctx);
+    if (!orgId) {
+      return [];
+    }
     const rows = await ctx.db
       .query("inventory")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))

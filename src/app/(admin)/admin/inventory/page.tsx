@@ -1,11 +1,12 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 
 export default function AdminInventoryPage() {
-  const rows = useQuery(api.inventory.listMine);
+  const { isAuthenticated } = useConvexAuth();
+  const rows = useQuery(api.inventory.listMine, isAuthenticated ? {} : "skip");
   const setQuantity = useMutation(api.inventory.setQuantity);
   const adjustQuantity = useMutation(api.inventory.adjustQuantity);
   const [error, setError] = useState<string | null>(null);

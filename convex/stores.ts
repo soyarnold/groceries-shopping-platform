@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { ensureCurrentUser } from "./lib/auth";
 import {
   getOrgIdFromIdentity,
+  getOrgRoleFromIdentity,
   getStoreByOrgId,
   getStoreBySlug,
   requireActiveOrgId,
@@ -55,6 +56,28 @@ export const getMine = query({
     }
 
     return await getStoreByOrgId(ctx, orgId);
+  },
+});
+
+/** Helps debug Clerk org ↔ Convex JWT claim wiring on the admin dashboard. */
+export const getAuthContext = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      orgId: v.union(v.string(), v.null()),
+      orgRole: v.union(v.string(), v.null()),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+    return {
+      orgId: getOrgIdFromIdentity(identity),
+      orgRole: getOrgRoleFromIdentity(identity),
+    };
   },
 });
 

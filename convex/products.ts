@@ -8,7 +8,7 @@ import {
   nextUniqueSlug,
 } from "./lib/catalog";
 import { resolvePriceCents } from "./lib/membership";
-import { requireActiveOrgId } from "./lib/org";
+import { getActiveOrgIdOrNull, requireActiveOrgId } from "./lib/org";
 import { slugify } from "./lib/slug";
 
 const productValidator = v.object({
@@ -48,7 +48,10 @@ export const listMine = query({
   args: {},
   returns: v.array(productValidator),
   handler: async (ctx) => {
-    const orgId = await requireActiveOrgId(ctx);
+    const orgId = await getActiveOrgIdOrNull(ctx);
+    if (!orgId) {
+      return [];
+    }
     const products = await ctx.db
       .query("products")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
