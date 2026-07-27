@@ -1,7 +1,13 @@
+# Single-package app (not a monorepo). Explicit root package avoids Vercel
+# mis-detecting this pnpm 10+/11 config file as a multi-package workspace.
+packages:
+  - "."
+
 allowBuilds:
   esbuild: true
   sharp: true
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
-onlyBuiltDependencies: esbuild
+onlyBuiltDependencies:
+  - esbuild
