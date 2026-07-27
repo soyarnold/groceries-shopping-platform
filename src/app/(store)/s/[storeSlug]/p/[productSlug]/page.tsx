@@ -5,6 +5,10 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { api } from "../../../../../../../convex/_generated/api";
 import { formatPriceCents } from "../../../../../../../convex/lib/catalog";
 
@@ -26,14 +30,17 @@ export default function ProductDetailPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   if (product === undefined) {
-    return <p className="text-stone-500">Loading product…</p>;
+    return <p className="text-muted-foreground">Loading product…</p>;
   }
 
   if (product === null) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="font-serif text-4xl">Product not found</h1>
-        <Link href={`/s/${params.storeSlug}`} className="underline">
+        <SectionHeading as="h1" title="Product not found" />
+        <Link
+          href={`/s/${params.storeSlug}`}
+          className="text-primary underline"
+        >
           Back to store
         </Link>
       </div>
@@ -43,40 +50,45 @@ export default function ProductDetailPage() {
   const outOfStock = product.quantity !== null && product.quantity < 1;
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
-      <Link href={`/s/${params.storeSlug}`} className="text-sm underline">
+    <div className="flex max-w-2xl flex-col gap-5">
+      <Link
+        href={`/s/${params.storeSlug}`}
+        className="text-sm font-medium text-primary underline"
+      >
         Back to store
       </Link>
-      <p className="text-xs uppercase tracking-wide text-stone-500">
-        {product.categoryName}
-      </p>
-      <h1 className="font-serif text-5xl">{product.name}</h1>
-      <p className="text-stone-600">
-        {product.description || "No description."}
-      </p>
-      <p className="text-2xl font-medium">
+
+      <div className="flex flex-wrap gap-2">
+        <Badge>{product.categoryName}</Badge>
+        {outOfStock ? <Badge tone="danger">Out of stock</Badge> : null}
+      </div>
+
+      <SectionHeading
+        as="h1"
+        title={product.name}
+        description={product.description || "No description."}
+      />
+
+      <p className="text-3xl font-semibold text-foreground">
         {formatPriceCents(product.displayPriceCents)}
-        <span className="ml-2 text-base font-normal text-stone-500">
+        <span className="ml-2 text-base font-normal text-muted-foreground">
           / {product.unit}
         </span>
       </p>
-      {product.quantity !== null ? (
-        <p className="text-sm text-stone-500">
-          {product.quantity > 0
-            ? `${product.quantity} in stock`
-            : "Out of stock"}
+
+      {product.quantity !== null && !outOfStock ? (
+        <p className="text-sm text-muted-foreground">
+          {product.quantity} in stock
         </p>
       ) : null}
 
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      {message ? <p className="text-sm text-emerald-800">{message}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      {message ? <p className="text-sm text-success">{message}</p> : null}
 
       {isSignedIn ? (
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
+          <Button
             disabled={outOfStock}
-            className="border border-stone-900 bg-stone-900 px-4 py-2 text-white disabled:opacity-40"
             onClick={() => {
               setError(null);
               setMessage(null);
@@ -88,10 +100,9 @@ export default function ProductDetailPage() {
             }}
           >
             Add to cart
-          </button>
-          <button
-            type="button"
-            className="border border-stone-300 px-4 py-2"
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => {
               setError(null);
               setMessage(null);
@@ -109,17 +120,22 @@ export default function ProductDetailPage() {
             }}
           >
             {favorited ? "Unfavorite" : "Favorite"}
-          </button>
+          </Button>
         </div>
       ) : (
-        <p className="text-sm text-stone-600">
-          <SignInButton mode="modal">
-            <button type="button" className="underline">
-              Sign in
-            </button>
-          </SignInButton>{" "}
-          to add to cart or favorites.
-        </p>
+        <Card>
+          <p className="text-sm text-muted-foreground">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="font-medium text-primary underline"
+              >
+                Sign in
+              </button>
+            </SignInButton>{" "}
+            to add to cart or favorites.
+          </p>
+        </Card>
       )}
     </div>
   );

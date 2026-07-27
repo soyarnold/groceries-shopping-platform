@@ -4,6 +4,10 @@ import { useOrganization } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { api } from "../../../../convex/_generated/api";
 
 export default function AdminDashboardPage() {
@@ -73,16 +77,19 @@ export default function AdminDashboardPage() {
   }
 
   if (!isLoaded) {
-    return <p className="text-stone-500">Loading organization…</p>;
+    return <p className="text-muted-foreground">Loading organization…</p>;
   }
 
   if (!organization) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold">Select a store org</h1>
-        <p className="text-stone-600">
+        <SectionHeading as="h1" title="Select a store org" />
+        <p className="text-muted-foreground">
           Use the organization switcher above, or{" "}
-          <a href="/admin/select-org" className="underline">
+          <a
+            href="/admin/select-org"
+            className="font-medium text-primary underline"
+          >
             create one
           </a>
           .
@@ -93,93 +100,96 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold">{organization.name}</h1>
-        <p className="mt-2 text-stone-600">
-          Store admin — catalog, inventory, and orders for this organization.
-        </p>
-      </div>
+      <SectionHeading
+        as="h1"
+        title={organization.name}
+        description="Catalog, inventory, and orders for this organization."
+      />
 
       {organization && authContext && !authContext.orgId ? (
-        <div className="border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Clerk has org <span className="font-mono">{organization.id}</span>{" "}
-          selected, but Convex auth has no org claim. Re-select the org in the
-          switcher (or sign out/in), and confirm the Clerk{" "}
-          <span className="font-mono">convex</span> JWT template includes{" "}
-          <span className="font-mono">org_id</span> /{" "}
-          <span className="font-mono">org_role</span>. Seed and store bootstrap
-          will fail until this is fixed.
-        </div>
+        <Card className="border-accent bg-accent/10">
+          <p className="text-sm text-foreground">
+            Clerk has org <span className="font-mono">{organization.id}</span>{" "}
+            selected, but Convex auth has no org claim. Re-select the org in the
+            switcher (or sign out/in), and confirm the Clerk{" "}
+            <span className="font-mono">convex</span> JWT template includes{" "}
+            <span className="font-mono">org_id</span> /{" "}
+            <span className="font-mono">org_role</span>. Seed and store
+            bootstrap will fail until this is fixed.
+          </p>
+        </Card>
       ) : null}
       {store === undefined ? (
-        <p className="text-stone-500">Loading store record…</p>
+        <p className="text-muted-foreground">Loading store record…</p>
       ) : store === null ? (
-        <div className="border border-dashed border-stone-400 bg-white p-4">
-          <p className="text-stone-700">
+        <Card className="border-dashed">
+          <p className="text-foreground">
             No Convex store linked to this organization yet.
           </p>
-          <button
-            type="button"
+          <Button
+            className="mt-3"
             onClick={() => void bootstrapStore()}
             disabled={bootstrapping}
-            className="mt-3 border border-stone-800 bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-50"
           >
             {bootstrapping ? "Creating…" : "Create store record"}
-          </button>
-          {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
-        </div>
+          </Button>
+          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+        </Card>
       ) : (
         <>
-          <dl className="grid gap-2 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-stone-500">Slug</dt>
-              <dd className="font-medium">
-                <Link href={`/s/${store.slug}`} className="underline">
-                  /s/{store.slug}
-                </Link>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-stone-500">Org ID</dt>
-              <dd className="font-mono text-xs">{store.orgId}</dd>
-            </div>
-            <div>
-              <dt className="text-stone-500">Status</dt>
-              <dd>{store.active ? "Active" : "Inactive"}</dd>
-            </div>
-          </dl>
+          <Card>
+            <dl className="grid gap-3 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-muted-foreground">Slug</dt>
+                <dd className="mt-1 font-medium">
+                  <Link
+                    href={`/s/${store.slug}`}
+                    className="text-primary underline"
+                  >
+                    /s/{store.slug}
+                  </Link>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Org ID</dt>
+                <dd className="mt-1 font-mono text-xs">{store.orgId}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="mt-1">
+                  <Badge tone={store.active ? "success" : "neutral"}>
+                    {store.active ? "Active" : "Inactive"}
+                  </Badge>
+                </dd>
+              </div>
+            </dl>
+          </Card>
 
-          <div className="border border-stone-300 bg-white/80 p-4">
-            <h2 className="font-medium">Demo catalog</h2>
-            <p className="mt-1 text-sm text-stone-600">
+          <Card>
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
+              Demo catalog
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Insert Produce, Dairy, and Pantry sample products with inventory
               and member prices. Skips if products already exist.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={seeding}
-                onClick={() => void onSeed(false)}
-                className="border border-stone-900 bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-50"
-              >
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button disabled={seeding} onClick={() => void onSeed(false)}>
                 {seeding ? "Seeding…" : "Seed demo catalog"}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
                 disabled={seeding}
                 onClick={() => void onSeed(true)}
-                className="border border-stone-400 px-4 py-2 text-sm disabled:opacity-50"
               >
                 Force re-seed
-              </button>
+              </Button>
             </div>
             {seedMessage ? (
-              <p className="mt-2 text-sm text-stone-700">{seedMessage}</p>
+              <p className="mt-2 text-sm text-foreground">{seedMessage}</p>
             ) : null}
-            {error ? (
-              <p className="mt-2 text-sm text-red-700">{error}</p>
-            ) : null}
-          </div>
+            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+          </Card>
         </>
       )}
     </div>

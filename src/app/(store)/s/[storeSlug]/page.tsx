@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { Button } from "@/components/ui/Button";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { cn } from "@/lib/cn";
 import { api } from "../../../../../convex/_generated/api";
 
 export default function StoreBrowsePage() {
@@ -27,14 +30,14 @@ export default function StoreBrowsePage() {
   );
 
   if (store === undefined) {
-    return <p className="text-stone-500">Loading store…</p>;
+    return <p className="text-muted-foreground">Loading store…</p>;
   }
 
   if (store === null || !store.active) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="font-serif text-4xl">Store not found</h1>
-        <Link href="/" className="underline">
+        <SectionHeading as="h1" title="Store not found" />
+        <Link href="/" className="text-primary underline">
           Back to stores
         </Link>
       </div>
@@ -45,66 +48,57 @@ export default function StoreBrowsePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-stone-500">Store</p>
-        <h1 className="font-serif text-4xl">{store.name}</h1>
-        {store.description ? (
-          <p className="mt-2 max-w-2xl text-stone-600">{store.description}</p>
-        ) : null}
-      </div>
+      <SectionHeading
+        as="h1"
+        eyebrow="Store"
+        title={store.name}
+        description={store.description}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
+        <label className="flex flex-1 flex-col gap-1.5 text-sm font-medium text-foreground">
           Search
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products"
-            className="border border-stone-300 bg-white px-3 py-2"
+            className="rounded-[var(--radius-md)] border border-border bg-surface px-3 py-2.5 text-foreground placeholder:text-muted-foreground"
           />
         </label>
         <Link
           href={`/s/${store.slug}/search`}
-          className="text-sm underline sm:mb-2"
+          className="text-sm font-medium text-primary underline sm:mb-2.5"
         >
           Search page
         </Link>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant={!categorySlug ? "primary" : "secondary"}
           onClick={() => setCategorySlug(undefined)}
-          className={`border px-3 py-1 text-sm ${
-            !categorySlug
-              ? "border-stone-900 bg-stone-900 text-white"
-              : "border-stone-300 bg-white"
-          }`}
         >
           All
-        </button>
+        </Button>
         {(categories ?? []).map((category) => (
-          <button
+          <Button
             key={category._id}
-            type="button"
+            size="sm"
+            variant={categorySlug === category.slug ? "primary" : "secondary"}
             onClick={() => setCategorySlug(category.slug)}
-            className={`border px-3 py-1 text-sm ${
-              categorySlug === category.slug
-                ? "border-stone-900 bg-stone-900 text-white"
-                : "border-stone-300 bg-white"
-            }`}
           >
             {category.name}
-          </button>
+          </Button>
         ))}
       </div>
 
       {list === undefined ? (
-        <p className="text-stone-500">Loading products…</p>
+        <p className="text-muted-foreground">Loading products…</p>
       ) : list.length === 0 ? (
-        <p className="text-stone-600">No products found.</p>
+        <p className="text-muted-foreground">No products found.</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3")}>
           {list.map((product) => (
             <li key={product._id}>
               <ProductCard

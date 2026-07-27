@@ -3,6 +3,9 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { buttonClassName } from "@/components/ui/buttonStyles";
+import { Card } from "@/components/ui/Card";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { api } from "../../../convex/_generated/api";
 
 export default function HomePage() {
@@ -18,48 +21,69 @@ export default function HomePage() {
   }, [ensureUser, isAuthenticated]);
 
   return (
-    <div className="flex flex-col gap-8">
-      <section className="max-w-2xl">
-        <p className="text-sm uppercase tracking-[0.2em] text-stone-500">
-          Multi-store groceries
-        </p>
-        <h1 className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">
-          Shop neighborhood stores in one place.
-        </h1>
-        <p className="mt-4 text-lg text-stone-600">
-          Browse catalogs, save favorites, and check out per store. Membership
-          unlocks member pricing across the platform.
-        </p>
+    <div className="flex flex-col gap-10">
+      <section className="hero-panel relative overflow-hidden rounded-[var(--radius-xl)] border border-border bg-surface px-6 py-10 sm:px-10 sm:py-14">
+        <div className="relative max-w-2xl">
+          <SectionHeading
+            as="h1"
+            eyebrow="Neighborhood groceries"
+            title="Shop local stores in one place"
+            description="Browse catalogs, save favorites, and check out per store. Plus membership unlocks member pricing across the platform."
+          />
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a href="#stores" className={buttonClassName({ size: "lg" })}>
+              Browse stores
+            </a>
+            <Link
+              href="/membership"
+              className={buttonClassName({ variant: "secondary", size: "lg" })}
+            >
+              See Plus benefits
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-stone-500">
-          Stores
-        </h2>
+      <section id="stores" className="flex flex-col gap-5">
+        <SectionHeading
+          as="h2"
+          eyebrow="Stores"
+          title="Pick a market"
+          description="Each store has its own catalog, cart checkout, and hours of inventory."
+        />
         {stores === undefined ? (
-          <p className="mt-4 text-stone-500">Loading stores…</p>
+          <p className="text-muted-foreground">Loading stores…</p>
         ) : stores.length === 0 ? (
-          <p className="mt-4 text-stone-600">
-            No stores yet. Create an organization and bootstrap it from{" "}
-            <Link href="/admin" className="underline">
-              Admin
-            </Link>
-            .
-          </p>
+          <Card>
+            <p className="text-muted-foreground">
+              No stores yet. Create an organization and bootstrap it from{" "}
+              <Link
+                href="/admin"
+                className="font-medium text-primary underline"
+              >
+                Admin
+              </Link>
+              .
+            </p>
+          </Card>
         ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+          <ul className="grid gap-4 sm:grid-cols-2">
             {stores.map((store) => (
               <li key={store._id}>
-                <Link
-                  href={`/s/${store.slug}`}
-                  className="block border border-stone-300 bg-white/70 px-4 py-5 transition hover:border-stone-500"
-                >
-                  <span className="font-serif text-2xl">{store.name}</span>
-                  {store.description ? (
-                    <span className="mt-2 block text-sm text-stone-600">
-                      {store.description}
-                    </span>
-                  ) : null}
+                <Link href={`/s/${store.slug}`} className="block no-underline">
+                  <Card interactive>
+                    <p className="font-[family-name:var(--font-display)] text-2xl font-semibold text-foreground">
+                      {store.name}
+                    </p>
+                    {store.description ? (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {store.description}
+                      </p>
+                    ) : null}
+                    <p className="mt-4 text-sm font-medium text-primary">
+                      Shop this store →
+                    </p>
+                  </Card>
                 </Link>
               </li>
             ))}

@@ -4,6 +4,11 @@ import { useAuth } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/buttonStyles";
+import { Card } from "@/components/ui/Card";
+import { IconButton } from "@/components/ui/IconButton";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { api } from "../../../../convex/_generated/api";
 import { formatPriceCents } from "../../../../convex/lib/catalog";
 
@@ -18,22 +23,25 @@ export default function CartPage() {
   if (!isSignedIn) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="font-serif text-4xl">Cart</h1>
-        <p className="text-stone-600">Sign in to view your cart.</p>
+        <SectionHeading as="h1" title="Cart" />
+        <p className="text-muted-foreground">Sign in to view your cart.</p>
       </div>
     );
   }
 
   if (cart === undefined) {
-    return <p className="text-stone-500">Loading cart…</p>;
+    return <p className="text-muted-foreground">Loading cart…</p>;
   }
 
   if (cart === null || cart.lines.length === 0) {
     return (
-      <div className="flex flex-col gap-3">
-        <h1 className="font-serif text-4xl">Cart</h1>
-        <p className="text-stone-600">Your cart is empty.</p>
-        <Link href="/" className="underline">
+      <div className="flex flex-col gap-4">
+        <SectionHeading
+          as="h1"
+          title="Cart"
+          description="Your cart is empty."
+        />
+        <Link href="/" className={buttonClassName({ variant: "secondary" })}>
           Browse stores
         </Link>
       </div>
@@ -42,107 +50,112 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-serif text-4xl">Cart</h1>
-        <p className="mt-2 text-stone-600">
-          {cart.itemCount} items · {formatPriceCents(cart.subtotalCents)}
-        </p>
-      </div>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      <SectionHeading
+        as="h1"
+        title="Cart"
+        description={`${cart.itemCount} items · ${formatPriceCents(cart.subtotalCents)}`}
+      />
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
 
       {cart.byOrg.map((group) => (
         <section key={group.orgId} className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-serif text-2xl">{group.storeName}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
+              {group.storeName}
+            </h2>
             <Link
               href={`/checkout/${group.orgId}`}
-              className="border border-stone-900 bg-stone-900 px-3 py-1 text-sm text-white"
+              className={buttonClassName({ size: "sm" })}
             >
               Checkout this store
             </Link>
           </div>
-          <ul className="divide-y divide-stone-200 border border-stone-200 bg-white/80">
-            {group.lines.map((line) => (
-              <li
-                key={line._id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <Link
-                    href={`/s/${line.storeSlug}/p/${line.productSlug}`}
-                    className="font-medium hover:underline"
-                  >
-                    {line.productName}
-                  </Link>
-                  <p className="text-xs text-stone-500">
-                    {formatPriceCents(line.unitPriceCents)} / {line.unit}
-                    {!line.active ? " · unavailable" : ""}
-                    {line.stock !== null ? ` · stock ${line.stock}` : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="border border-stone-300 px-2 py-1 text-sm"
-                    onClick={() => {
-                      setError(null);
-                      void setQuantity({
-                        cartItemId: line._id,
-                        quantity: line.quantity - 1,
-                      }).catch((err: unknown) =>
-                        setError(
-                          err instanceof Error ? err.message : "Update failed",
-                        ),
-                      );
-                    }}
-                  >
-                    −
-                  </button>
-                  <span className="w-8 text-center text-sm">
-                    {line.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    className="border border-stone-300 px-2 py-1 text-sm"
-                    onClick={() => {
-                      setError(null);
-                      void setQuantity({
-                        cartItemId: line._id,
-                        quantity: line.quantity + 1,
-                      }).catch((err: unknown) =>
-                        setError(
-                          err instanceof Error ? err.message : "Update failed",
-                        ),
-                      );
-                    }}
-                  >
-                    +
-                  </button>
-                  <span className="ml-2 text-sm font-medium">
-                    {formatPriceCents(line.lineTotalCents)}
-                  </span>
-                  <button
-                    type="button"
-                    className="border border-stone-300 px-2 py-1 text-sm"
-                    onClick={() => {
-                      setError(null);
-                      void remove({ cartItemId: line._id }).catch(
-                        (err: unknown) =>
+          <Card padded={false}>
+            <ul className="divide-y divide-border">
+              {group.lines.map((line) => (
+                <li
+                  key={line._id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div>
+                    <Link
+                      href={`/s/${line.storeSlug}/p/${line.productSlug}`}
+                      className="font-medium text-foreground hover:text-primary"
+                    >
+                      {line.productName}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {formatPriceCents(line.unitPriceCents)} / {line.unit}
+                      {!line.active ? " · unavailable" : ""}
+                      {line.stock !== null ? ` · stock ${line.stock}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconButton
+                      label="Decrease quantity"
+                      onClick={() => {
+                        setError(null);
+                        void setQuantity({
+                          cartItemId: line._id,
+                          quantity: line.quantity - 1,
+                        }).catch((err: unknown) =>
                           setError(
                             err instanceof Error
                               ? err.message
-                              : "Remove failed",
+                              : "Update failed",
                           ),
-                      );
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm text-stone-600">
+                        );
+                      }}
+                    >
+                      −
+                    </IconButton>
+                    <span className="w-8 text-center text-sm font-medium">
+                      {line.quantity}
+                    </span>
+                    <IconButton
+                      label="Increase quantity"
+                      onClick={() => {
+                        setError(null);
+                        void setQuantity({
+                          cartItemId: line._id,
+                          quantity: line.quantity + 1,
+                        }).catch((err: unknown) =>
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : "Update failed",
+                          ),
+                        );
+                      }}
+                    >
+                      +
+                    </IconButton>
+                    <span className="ml-2 min-w-16 text-right text-sm font-semibold">
+                      {formatPriceCents(line.lineTotalCents)}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setError(null);
+                        void remove({ cartItemId: line._id }).catch(
+                          (err: unknown) =>
+                            setError(
+                              err instanceof Error
+                                ? err.message
+                                : "Remove failed",
+                            ),
+                        );
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          <p className="text-sm text-muted-foreground">
             Store subtotal {formatPriceCents(group.subtotalCents)}
           </p>
         </section>
