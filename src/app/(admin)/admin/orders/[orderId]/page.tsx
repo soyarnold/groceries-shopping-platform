@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "../../../../../../convex/_generated/api";
@@ -9,9 +9,11 @@ import { formatPriceCents } from "../../../../../../convex/lib/catalog";
 
 export default function AdminOrderDetailPage() {
   const params = useParams<{ orderId: string }>();
-  const detail = useQuery(api.orders.getForActiveStore, {
-    orderId: params.orderId as Id<"orders">,
-  });
+  const { isAuthenticated } = useConvexAuth();
+  const detail = useQuery(
+    api.orders.getForActiveStore,
+    isAuthenticated ? { orderId: params.orderId as Id<"orders"> } : "skip",
+  );
 
   if (detail === undefined) {
     return <p className="text-stone-500">Loading…</p>;

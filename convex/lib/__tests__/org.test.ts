@@ -42,4 +42,20 @@ describe("org identity helpers", () => {
       "org:admin",
     );
   });
+
+  it("reads org from session-token o claim", () => {
+    expect(
+      getOrgIdFromIdentity(identity({ o: { id: "org_789", rol: "admin" } })),
+    ).toBe("org_789");
+    expect(
+      getOrgRoleFromIdentity(identity({ o: { id: "org_789", rol: "admin" } })),
+    ).toBe("admin");
+    expect(isStoreAdminRole("admin")).toBe(true);
+  });
+
+  it("reads dotted o.id claim form", () => {
+    expect(getOrgIdFromIdentity(identity({ "o.id": "org_dot" }))).toBe(
+      "org_dot",
+    );
+  });
 });

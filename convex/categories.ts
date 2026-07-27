@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { assertNonNegativeInt, nextUniqueSlug } from "./lib/catalog";
-import { requireActiveOrgId } from "./lib/org";
+import { getActiveOrgIdOrNull, requireActiveOrgId } from "./lib/org";
 import { slugify } from "./lib/slug";
 
 const categoryValidator = v.object({
@@ -18,7 +18,10 @@ export const listMine = query({
   args: {},
   returns: v.array(categoryValidator),
   handler: async (ctx) => {
-    const orgId = await requireActiveOrgId(ctx);
+    const orgId = await getActiveOrgIdOrNull(ctx);
+    if (!orgId) {
+      return [];
+    }
     const categories = await ctx.db
       .query("categories")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))

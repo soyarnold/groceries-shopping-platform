@@ -1,21 +1,37 @@
 "use client";
 
 import { useOrganization } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 import { api } from "../../../../convex/_generated/api";
 
 export default function AdminDashboardPage() {
   const { organization, isLoaded } = useOrganization();
-  const store = useQuery(api.stores.getMine);
+  const { isAuthenticated } = useConvexAuth();
+  const store = useQuery(api.stores.getMine, isAuthenticated ? {} : "skip");
+  const authContext = useQuery(
+    api.stores.getAuthContext,
+    isAuthenticated ? {} : "skip",
+  );
   const ensureUser = useMutation(api.users.ensure);
   const ensureStore = useMutation(api.stores.ensureFromActiveOrg);
+  const seedCatalog = useMutation(api.seed.seedDemoCatalog);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [seedMessage, setSeedMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void ensureUser().catch(() => undefined);
-  }, [ensureUser]);
+    if (!isAuthenticated) {
+      return;
+    }
+    void ensureUser({});
+  }, [ensureUser, isAuthenticated]);
 
   async function bootstrapStore() {
     if (!organization) {
@@ -38,17 +54,42 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function onSeed(force: boolean) {
+    setSeeding(true);
+    setError(null);
+    setSeedMessage(null);
+    try {
+      const result = await seedCatalog({ force });
+      if (result.skipped) {
+        setSeedMessage(
+          "Catalog already has products. Use “Force re-seed” to add another demo set.",
+        );
+      } else {
+        setSeedMessage(
+          `Seeded ${result.productCount} products across ${result.categoryCount} categories (${result.withMemberPrice} with member pricing).`,
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Seed failed");
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   if (!isLoaded) {
-    return <p className="text-stone-500">Loading organization…</p>;
+    return <p className="text-muted-foreground">Loading organization…</p>;
   }
 
   if (!organization) {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold">Select a store org</h1>
-        <p className="text-stone-600">
+        <SectionHeading as="h1" title="Select a store org" />
+        <p className="text-muted-foreground">
           Use the organization switcher above, or{" "}
-          <a href="/admin/select-org" className="underline">
+          <a
+            href="/admin/select-org"
+            className="font-medium text-primary underline"
+          >
             create one
           </a>
           .
@@ -59,45 +100,97 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold">{organization.name}</h1>
-        <p className="mt-2 text-stone-600">
-          Admin dashboard shell — catalog tools arrive in phase 2.
-        </p>
-      </div>
+      <SectionHeading
+        as="h1"
+        title={organization.name}
+        description="Catalog, inventory, and orders for this organization."
+      />
 
+      {organization && authContext && !authContext.orgId ? (
+        <Card className="border-accent bg-accent/10">
+          <p className="text-sm text-foreground">
+            Clerk has org <span className="font-mono">{organization.id}</span>{" "}
+            selected, but Convex auth has no org claim. Re-select the org in the
+            switcher (or sign out/in), and confirm the Clerk{" "}
+            <span className="font-mono">convex</span> JWT template includes{" "}
+            <span className="font-mono">org_id</span> /{" "}
+            <span className="font-mono">org_role</span>. Seed and store
+            bootstrap will fail until this is fixed.
+          </p>
+        </Card>
+      ) : null}
       {store === undefined ? (
-        <p className="text-stone-500">Loading store record…</p>
+        <p className="text-muted-foreground">Loading store record…</p>
       ) : store === null ? (
-        <div className="border border-dashed border-stone-400 bg-white p-4">
-          <p className="text-stone-700">
+        <Card className="border-dashed">
+          <p className="text-foreground">
             No Convex store linked to this organization yet.
           </p>
-          <button
-            type="button"
+          <Button
+            className="mt-3"
             onClick={() => void bootstrapStore()}
             disabled={bootstrapping}
-            className="mt-3 border border-stone-800 bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-50"
           >
             {bootstrapping ? "Creating…" : "Create store record"}
-          </button>
-          {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
-        </div>
+          </Button>
+          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+        </Card>
       ) : (
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-stone-500">Slug</dt>
-            <dd className="font-medium">/{store.slug}</dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Org ID</dt>
-            <dd className="font-mono text-xs">{store.orgId}</dd>
-          </div>
-          <div>
-            <dt className="text-stone-500">Status</dt>
-            <dd>{store.active ? "Active" : "Inactive"}</dd>
-          </div>
-        </dl>
+        <>
+          <Card>
+            <dl className="grid gap-3 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-muted-foreground">Slug</dt>
+                <dd className="mt-1 font-medium">
+                  <Link
+                    href={`/s/${store.slug}`}
+                    className="text-primary underline"
+                  >
+                    /s/{store.slug}
+                  </Link>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Org ID</dt>
+                <dd className="mt-1 font-mono text-xs">{store.orgId}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="mt-1">
+                  <Badge tone={store.active ? "success" : "neutral"}>
+                    {store.active ? "Active" : "Inactive"}
+                  </Badge>
+                </dd>
+              </div>
+            </dl>
+          </Card>
+
+          <Card>
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
+              Demo catalog
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Insert Produce, Dairy, and Pantry sample products with inventory
+              and member prices. Skips if products already exist.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button disabled={seeding} onClick={() => void onSeed(false)}>
+                {seeding ? "Seeding…" : "Seed demo catalog"}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={seeding}
+                onClick={() => void onSeed(true)}
+              >
+                Force re-seed
+              </Button>
+            </div>
+            {seedMessage ? (
+              <p className="mt-2 text-sm text-foreground">{seedMessage}</p>
+            ) : null}
+            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+          </Card>
+        </>
       )}
     </div>
   );

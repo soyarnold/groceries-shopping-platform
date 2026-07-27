@@ -7,8 +7,11 @@ import {
   useAuth,
 } from "@clerk/nextjs";
 import { useConvexAuth, useQuery } from "convex/react";
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/Button";
+import { Container } from "@/components/ui/Container";
+import { Footer } from "@/components/ui/Footer";
+import { Header } from "@/components/ui/Header";
 import { api } from "../../../convex/_generated/api";
 
 export default function StoreLayout({ children }: { children: ReactNode }) {
@@ -16,50 +19,40 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useConvexAuth();
   const cartCount = useQuery(api.cart.countMine, isAuthenticated ? {} : "skip");
 
+  const cartBadge =
+    cartCount !== undefined && cartCount > 0 ? `(${cartCount})` : undefined;
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-[#f6f3ee] text-[#1c1917]">
-      <header className="border-b border-stone-300/70 bg-[#f6f3ee]/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <Link href="/" className="font-serif text-2xl tracking-tight">
-            Grocer
-          </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-4 text-sm">
-            <Link href="/cart" className="hover:underline">
-              Cart
-              {cartCount !== undefined && cartCount > 0
-                ? ` (${cartCount})`
-                : ""}
-            </Link>
-            <Link href="/favorites" className="hover:underline">
-              Favorites
-            </Link>
-            <Link href="/orders" className="hover:underline">
-              Orders
-            </Link>
-            <Link href="/membership" className="hover:underline">
-              Membership
-            </Link>
-            <Link href="/admin" className="hover:underline">
-              Admin
-            </Link>
-            {isSignedIn ? (
-              <>
-                <OrganizationSwitcher
-                  hidePersonal
-                  afterSelectOrganizationUrl="/admin"
-                  afterCreateOrganizationUrl="/admin"
-                />
-                <UserButton />
-              </>
-            ) : (
-              <SignInButton mode="modal" />
-            )}
-          </nav>
-        </div>
-      </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
-        {children}
+    <div className="flex min-h-full flex-1 flex-col text-foreground">
+      <Header
+        links={[
+          { href: "/cart", label: "Cart", badge: cartBadge },
+          { href: "/favorites", label: "Favorites" },
+          { href: "/orders", label: "Orders" },
+          { href: "/membership", label: "Membership" },
+          { href: "/admin", label: "Admin" },
+        ]}
+        actions={
+          isSignedIn ? (
+            <>
+              <OrganizationSwitcher
+                hidePersonal
+                afterSelectOrganizationUrl="/admin"
+                afterCreateOrganizationUrl="/admin"
+              />
+              <UserButton />
+            </>
+          ) : (
+            <SignInButton mode="modal">
+              <Button size="sm">Sign in</Button>
+            </SignInButton>
+          )
+        }
+      />
+      <main className="flex flex-1 flex-col py-8 sm:py-10">
+        <Container className="flex flex-1 flex-col gap-8">{children}</Container>
       </main>
+      <Footer />
     </div>
   );
 }

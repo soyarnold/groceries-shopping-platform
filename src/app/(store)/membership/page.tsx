@@ -1,6 +1,6 @@
 "use client";
 
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -8,16 +8,23 @@ import { api } from "../../../../convex/_generated/api";
 function MembershipContent() {
   const searchParams = useSearchParams();
   const checkoutState = searchParams.get("checkout");
+  const { isAuthenticated } = useConvexAuth();
   const ensureUser = useMutation(api.users.ensure);
-  const membership = useQuery(api.membership.getMine);
+  const membership = useQuery(
+    api.membership.getMine,
+    isAuthenticated ? {} : "skip",
+  );
   const startCheckout = useAction(api.stripeMembership.startCheckout);
   const openPortal = useAction(api.stripeMembership.createBillingPortal);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<"checkout" | "portal" | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
     void ensureUser({});
-  }, [ensureUser]);
+  }, [ensureUser, isAuthenticated]);
 
   async function onSubscribe() {
     setLoading("checkout");

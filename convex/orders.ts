@@ -13,7 +13,7 @@ import {
   computeOrderTotals,
   type OrderStatus,
 } from "./lib/orders";
-import { requireActiveOrgId } from "./lib/org";
+import { getActiveOrgIdOrNull, requireActiveOrgId } from "./lib/org";
 
 const orderStatusValidator = v.union(
   v.literal("pending_payment"),
@@ -128,7 +128,10 @@ export const listForActiveStore = query({
   args: {},
   returns: v.array(orderValidator),
   handler: async (ctx) => {
-    const orgId = await requireActiveOrgId(ctx);
+    const orgId = await getActiveOrgIdOrNull(ctx);
+    if (!orgId) {
+      return [];
+    }
     const orders = await ctx.db
       .query("orders")
       .withIndex("by_org", (q) => q.eq("orgId", orgId))
@@ -149,7 +152,10 @@ export const getForActiveStore = query({
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const orgId = await requireActiveOrgId(ctx);
+    const orgId = await getActiveOrgIdOrNull(ctx);
+    if (!orgId) {
+      return null;
+    }
     const order = await ctx.db.get(args.orderId);
     if (!order || order.orgId !== orgId) {
       return null;

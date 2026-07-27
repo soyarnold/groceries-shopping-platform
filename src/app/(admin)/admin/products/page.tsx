@@ -1,14 +1,21 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { formatPriceCents } from "../../../../../convex/lib/catalog";
 
 export default function AdminProductsPage() {
-  const products = useQuery(api.products.listMine);
-  const categories = useQuery(api.categories.listMine);
+  const { isAuthenticated } = useConvexAuth();
+  const products = useQuery(
+    api.products.listMine,
+    isAuthenticated ? {} : "skip",
+  );
+  const categories = useQuery(
+    api.categories.listMine,
+    isAuthenticated ? {} : "skip",
+  );
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
 
